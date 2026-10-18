@@ -98,16 +98,64 @@ class Tweet {
     }
 }
 
+class Twitter {
+    // Propiedades
+    #tweets = [];
+
+    // Getter
+    get tweets() { return [...this.#tweets]; }
+
+    // Métodos
+    twittear(tweet) {
+        const tweetEncontrado = this.#tweets.find(t => t.id === tweet.id);
+        if (!tweetEncontrado)
+            this.#tweets.push(tweet);
+    }
+
+    obtenerTimeline(usuario) {
+        const seguidos = usuario.siguiendo;
+        const todosLosTweets = [
+            ...this.#obtenerPublicados(seguidos),
+            ...this.#obtenerLikeados(seguidos),
+            ...this.#obtenerRetweeteados(seguidos)
+        ];
+        const tweetsUnicos = todosLosTweets.filter((tweet, index, self) =>
+            index === self.findIndex(t => t.id === tweet.id)
+        );
+        return tweetsUnicos.reverse();
+    }
+
+    // Métodos privados
+    #obtenerPublicados(siguiendo) {
+        return this.#tweets.filter(tweet =>
+            siguiendo.some(usuario => usuario.handle === tweet.handle)
+        );
+    }
+
+    #obtenerLikeados(siguiendo) {
+        return this.#tweets.filter(tweet =>
+            siguiendo.some(u => tweet.likes.some(like => like.handle === u.handle))
+        );
+    }
+
+    #obtenerRetweeteados(siguiendo) {
+        return this.#tweets.filter(tweet =>
+            siguiendo.some(u => tweet.retweets.some(rt => rt.handle === u.handle))
+        );
+    }
+}
+
 // --- Pruebas de ejecución ---
 
-// 1. Crear usuarios
+// 1. Definir usuarios e interacciones de seguimiento
+// 1.1 Crear usuarios
 const fer = new Usuario('fer_dev');
 const ana = new Usuario('ana_code');
 const profesor = new Usuario("Profe");
 const hermana = new Usuario("Euge");
 const esposo = new Usuario("Coti");
 
-// 2. Probar método seguir()
+// 1.2 Probar método seguir()
 fer.seguir(ana);
 ana.seguir(fer);
 profesor.seguir(fer);
@@ -121,6 +169,9 @@ ana.seguir(profesor)
 console.log('Fer está siguiendo a:', fer.siguiendo.map(s => s.handle));
 console.log('Ana está siguiendo a:', ana.siguiendo.map(s => s.handle));
 
+// 2. Instanciar la clase Twitter
+const miTwitter = new Twitter()
+
 // 3. Crear Tweets
 const miTweet1 = new Tweet(fer.handle, '¡Mi primer tweet haciendo TDD!');
 const miTweet2 = new Tweet(fer.handle, 'Estoy estudiando Clases en JS');
@@ -131,7 +182,15 @@ const miTweet3 = new Tweet(fer.handle, 'Euge te amo');
 
 console.log(miTweet1.texto, miTweet1.handle, miTweet1.likes);
 
-// 4. Probar darLike 
+// 4. Registrar los tweets en la plataforma
+miTwitter.twittear(miTweet1);
+miTwitter.twittear(miTweet2);
+miTwitter.twittear(miTweet3);
+miTwitter.twittear(anaTweet);
+miTwitter.twittear(profeTweet);
+miTwitter.twittear(esposoTweet);
+
+// 5.1 Probar darLike 
 miTweet1.darLike(ana);
 miTweet1.darLike(profesor);
 miTweet3.darLike(hermana);
@@ -141,16 +200,25 @@ miTweet2.darLike(ana);
 
 console.log('Likes de Fer:', miTweet1.likes.length + miTweet2.likes.length + miTweet3.likes.length);
 
-// (Toggle)
+// 5.2 (Toggle)
 console.log('Likes del tweet 1 de Fer antes de toggle:', miTweet1.likes.length);//2
 miTweet1.darLike(ana); // Dar like de nuevo lo saca
 console.log('Likes del tweet 1 de Fer tras toggle:', miTweet1.likes.length);//1
 
-// 5. Probar retweetear (Toggle)
+// 6.1 Probar retweetear 
 miTweet1.retweetear(ana);
 profeTweet.retweetear(ana);
 profeTweet.retweetear(fer)
 console.log('Retweets del tweet 1 de Fer:', miTweet1.retweets.length); // Debería ser 1
 console.log('Retweets del tweet del profe:', profeTweet.retweets.length); // Debería ser 2
+
+// 6.2 (Toggle)
 miTweet1.retweetear(ana);
 console.log('Retweets del tweet 1 de Fer después de toogle:', miTweet1.retweets.length); // Debería ser 0
+
+// 7. Probar TimeLine
+console.table(miTwitter.obtenerTimeline(fer).map(t => ({Autor: t.handle, Texto: t.texto})));
+console.table(miTwitter.obtenerTimeline(ana).map(t => ({Autor: t.handle, Texto: t.texto})));
+console.table(miTwitter.obtenerTimeline(profesor).map(t => ({Autor: t.handle, Texto: t.texto})));
+console.table(miTwitter.obtenerTimeline(esposo).map(t => ({Autor: t.handle, Texto: t.texto})));
+console.table(miTwitter.obtenerTimeline(hermana).map(t => ({Autor: t.handle, Texto: t.texto})));
