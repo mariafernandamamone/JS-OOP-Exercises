@@ -81,6 +81,50 @@ class Serie {
     }
 }
 
+class Usuario {
+    // Propiedades
+    #nombre;
+    #email;
+    #historialVistos = [];
+    #favoritos = [];
+
+    constructor(nombre, email) {
+       this.#nombre = nombre;
+       this.#email = email;
+    }
+
+    // Getters
+    get nombre() { return this.#nombre; }
+    get email() { return this.#email; }
+    get historialVistos() { return [...this.#historialVistos]; }
+    get favoritos() { return [...this.#favoritos]; }
+
+    // Métodos
+
+    verEpisodio(episodio) {
+        const episodioEncontrado = this.#historialVistos.find(ep => 
+            ep.titulo === episodio.titulo && ep.temporada === episodio.temporada);
+        if (!episodioEncontrado)
+            this.#historialVistos.push(episodio);
+    }
+
+    agregarAFavoritos(serie) {
+        const indice = this.#favoritos.findIndex(se => se.titulo === serie.titulo);
+
+        if (indice !== - 1) {
+            this.#favoritos.splice(indice, 1);
+        } else {
+            this.#favoritos.push(serie);
+        } 
+    }
+    obtenerTiempoTotalVisto() {
+        return this.#historialVistos.reduce((acc, visto) => {
+            return acc + visto.duracion;
+        }, 0);
+    }
+}
+
+
 
 
 // --- Pruebas de ejecución ---
@@ -137,6 +181,33 @@ console.log("=== Episodios de la temporada 1 ===");
 console.table(theChosen.obtenerEpisodiosPorTemporada(1).map(ep => ({
     Título: ep.titulo,
     Episodio: ep.numeroEpisodio,
+    Temporada: ep.temporada,
+    Duración: `${ep.duracion} min`
+})));
+
+// 8. Instanciar usuario
+const fer = new Usuario('Fer', 'fer@dev.com');
+
+// 9. Probar verEpisodio y evitar duplicados
+fer.verEpisodio(ep1); // 54 min
+fer.verEpisodio(ep2); // 46 min
+fer.verEpisodio(new Episodio('Te he llamado por tu nombre', 54, 1, 1)); // Intento de duplicado (no debería agregarse)
+
+console.log('Episodios vistos (debería ser 2):', fer.historialVistos.length);
+
+// 10. Probar obtenerTiempoTotalVisto (54 + 46 = 100 min)
+console.log('Tiempo total visto:', fer.obtenerTiempoTotalVisto(), 'minutos.');
+
+// 4. Probar agregarAFavoritos (Toggle)
+fer.agregarAFavoritos(theChosen);
+console.log('Favoritos tras agregar:', fer.favoritos.map(s => s.titulo)); // ['The Chosen']
+
+fer.agregarAFavoritos(theChosen); // Toggle: debería quitarla
+console.log('Favoritos tras intento de volver a agregar (debería estar vacío):', fer.favoritos.map(s => s.titulo)); // []
+
+// 5. Tabla resumen del historial de vistos
+console.table(fer.historialVistos.map(ep => ({
+    Título: ep.titulo,
     Temporada: ep.temporada,
     Duración: `${ep.duracion} min`
 })));
